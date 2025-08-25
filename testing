@@ -1,0 +1,186 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  CircularProgress,
+} from "@mui/material";
+import axios from "axios";
+
+interface Message {
+  sender: string;
+  text: string;
+  timestamp: string;
+}
+
+interface Chat {
+  id: string;
+  riskId: string;
+  user: string;
+  status: "Completed" | "In Progress";
+  lastUpdated: string;
+  messages: Message[];
+}
+
+const statusColors: Record<string, "success" | "warning"> = {
+  Completed: "success",
+  "In Progress": "warning",
+};
+
+export default function ChatHistory() {
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axios
+      .get("data/dummyChat.json") // <-- your backend or dummy.json
+      .then((res) => setChats(res.data))
+      .catch((err) => console.error("Error fetching chats", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Chat History
+      </Typography>
+
+      {chats.map((chat) => (
+        <Card key={chat.id} sx={{ mb: 2, p: 1 }}>
+          <CardContent>
+            {/* Header */}
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {chat.user}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Risk ID: {chat.riskId}
+                </Typography>
+              </Box>
+              <Box textAlign="right">
+                <Chip
+                  label={chat.status}
+                  color={statusColors[chat.status]}
+                  size="small"
+                />
+                <Typography variant="caption" display="block">
+                  Last: {new Date(chat.lastUpdated).toLocaleString()}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* Messages */}
+            {chat.messages.map((msg, idx) => (
+              <Box
+                key={idx}
+                sx={{
+                  backgroundColor:
+                    msg.sender === chat.user ? "#f9f9f9" : "#e3f2fd",
+                  p: 1,
+                  mb: 1,
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  {msg.sender}
+                </Typography>
+                <Typography variant="body2">{msg.text}</Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {new Date(msg.timestamp).toLocaleString()}
+                </Typography>
+              </Box>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+import React from "react";
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+} from "@mui/lab";
+import { Card, CardContent, Typography } from "@mui/material";
+
+interface Activity {
+  id: number;
+  message?: string;
+  timestamp?: string;
+  status?: string;
+}
+
+interface Props {
+  activities: Activity[];
+}
+
+const RiskActivitySummary: React.FC<Props> = ({ activities }) => {
+  return (
+    <Card className="shadow-lg rounded-2xl">
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          Activity Timeline – Risk Summary
+        </Typography>
+
+        <Timeline>
+          {activities.map((activity, idx) => (
+            <TimelineItem key={activity.id}>
+              <TimelineSeparator>
+                <TimelineDot
+                  color={
+                    activity.status === "completed"
+                      ? "success"
+                      : activity.status === "in-progress"
+                      ? "warning"
+                      : "primary"
+                  }
+                />
+                {idx < activities.length - 1 && <TimelineConnector />}
+              </TimelineSeparator>
+              <TimelineContent>
+                <Typography variant="body1">{activity.message}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {activity.timestamp}
+                </Typography>
+              </TimelineContent>
+            </TimelineItem>
+          ))}
+        </Timeline>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default RiskActivitySummary;
