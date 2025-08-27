@@ -1,92 +1,80 @@
-import React, { useEffect, useState } from "react";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from "recharts";
-import { Box, Typography, Select, MenuItem } from "@mui/material";
-import axios from "axios";
-import api from "../../Api/api";
+import React from 'react'
+import ReasonCodeAnalysisChart from '../Components/Chart/ReasonCodeAnalysisChart'
+import RiskMonitoringByType from '../Components/Chart/RiskMonitoringByType'
+import RootCauseCard from '../Components/Chart/RootCauseCard';
+import MitigationCard from '../Components/MitigationCard';
+import MitigationChart from '../Components/Chart/MitigationChart';
+import RiskTypesOverTimeChart from '../Components/Chart/RiskTypeOverTimeChart';
 
-const RiskTypesOverTimeChart: React.FC = () => {
-  const [weeklyData, setWeeklyData] = useState<any[]>([]);
-  const [monthlyData, setMonthlyData] = useState<any[]>([]);
-  const [period, setPeriod] = useState<"weekly" | "monthly">("weekly");
+function Dashboard() {
 
-  // ✅ Fetch API once and store both weekly + monthly
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.get("/risks.json"); // your API endpoint
-        setWeeklyData(res.data.weekly);
-        setMonthlyData(res.data.monthly);
-      } catch (err) {
-        console.error("Error fetching risk trends:", err);
-      }
-    };
-    fetchData();
-  }, []);
-  console.log("Weekly Data:", weeklyData);
-  console.log("Monthly Data:", monthlyData);
+  const rootCauses = [
+    { label: "Supplier Delay", value: 24 },
+    { label: "Demand Spike", value: 18 },
+    { label: "Quality Control", value: 15 },
+    { label: "Transport Issues", value: 12 },
+    { label: "System Error", value: 8 },
+  ];
 
-  // ✅ Select chart data based on dropdown
-  const chartData = period === "weekly" ? weeklyData : monthlyData;
+  const  chartData = [
+  { action: "Express Delivery", recommended: 160, adopted: 140 },
+  { action: "Alternate SKU", recommended: 180, adopted: 150 },
+  { action: "Release Restricted Stock", recommended: 70, adopted: 65 },
+  { action: "Rebalance Inventory", recommended: 120, adopted: 90 },
+];
+  const reasonCodeData = [
+    { name: "R01", botAccepted: 120, plannerOverride: 20 },
+    { name: "R02", botAccepted: 110, plannerOverride: 10 },
+    { name: "R03", botAccepted: 60, plannerOverride: 30 },
+    { name: "R04", botAccepted: 50, plannerOverride: 15 },
+    { name: "R05", botAccepted: 150, plannerOverride: 40 },
+    { name: "R06", botAccepted: 40, plannerOverride: 10 },
+    { name: "R07", botAccepted: 70, plannerOverride: 25 },
+    { name: "R08", botAccepted: 130, plannerOverride: 20 },
+    { name: "R09", botAccepted: 80, plannerOverride: 30 },
+    { name: "R10", botAccepted: 60, plannerOverride: 15 },
+    { name: "R11", botAccepted: 90, plannerOverride: 25 },
+    { name: "R12", botAccepted: 70, plannerOverride: 20 },
+  ];
+    const riskData = [
+    {
+      name: "Out of stock",
+      Critical: 10,
+      High: 15,
+      Medium: 20,
+      Low: 12,
+    },
+    {
+      name: "Below RS",
+      Critical: 8,
+      High: 12,
+      Medium: 15,
+      Low: 10,
+    },
+    {
+      name: "Above Max",
+      Critical: 5,
+      High: 10,
+      Medium: 12,
+      Low: 8,
+    },
+  ];
+
+  
+
+
 
   return (
-    <Box sx={{ width: "100%", height: 400, p: 2 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Risk Types Trends Over Time</Typography>
-        <Select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value as "weekly" | "monthly")}
-          size="small"
-        >
-          <MenuItem value="weekly">Weekly</MenuItem>
-          <MenuItem value="monthly">Monthly</MenuItem>
-        </Select>
-      </Box>
-
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="period" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="outOfStock" stroke="#d32f2f" name="Out of Stock" />
-          <Line type="monotone" dataKey="belowRS" stroke="#f57c00" name="Below RS" />
-          <Line type="monotone" dataKey="aboveMax" stroke="#1976d2" name="Above Max" />
-        </LineChart>
-      </ResponsiveContainer>
-    </Box>
-  );
-};
-
-export default RiskTypesOverTimeChart;
-
-
-
-{
-  "weekly": [
-    { "period": "W45", "outOfStock": 45, "belowRS": 32, "aboveMax": 18 },
-    { "period": "W46", "outOfStock": 52, "belowRS": 35, "aboveMax": 20 },
-    { "period": "W47", "outOfStock": 40, "belowRS": 38, "aboveMax": 22 },
-    { "period": "W48", "outOfStock": 44, "belowRS": 36, "aboveMax": 28 },
-    { "period": "W49", "outOfStock": 50, "belowRS": 39, "aboveMax": 24 },
-    { "period": "W50", "outOfStock": 42, "belowRS": 41, "aboveMax": 30 },
-    { "period": "W51", "outOfStock": 61, "belowRS": 46, "aboveMax": 33 },
-    { "period": "W52", "outOfStock": 59, "belowRS": 44, "aboveMax": 29 },
-    { "period": "W01", "outOfStock": 55, "belowRS": 43, "aboveMax": 31 },
-    { "period": "W02", "outOfStock": 49, "belowRS": 42, "aboveMax": 28 },
-    { "period": "W03", "outOfStock": 47, "belowRS": 40, "aboveMax": 32 },
-    { "period": "W04", "outOfStock": 54, "belowRS": 45, "aboveMax": 35 }
-  ],
-  "monthly": [
-    { "period": "Jan", "outOfStock": 180, "belowRS": 135, "aboveMax": 92 },
-    { "period": "Feb", "outOfStock": 165, "belowRS": 120, "aboveMax": 88 },
-    { "period": "Mar", "outOfStock": 175, "belowRS": 140, "aboveMax": 95 },
-    { "period": "Apr", "outOfStock": 160, "belowRS": 125, "aboveMax": 85 },
-    { "period": "May", "outOfStock": 190, "belowRS": 150, "aboveMax": 100 },
-    { "period": "Jun", "outOfStock": 200, "belowRS": 155, "aboveMax": 110 }
-  ]
+    <div>
+      <ReasonCodeAnalysisChart data={reasonCodeData} />
+      <RiskMonitoringByType data={riskData}/>
+      <RootCauseCard title="Top 5 Root Cause Reason Codes" data={rootCauses} />
+      <MitigationChart action={''} recommended={0} adopted={0} />
+      <RiskTypesOverTimeChart/>
+      
+      
+    </div>
+  )
 }
+
+export default Dashboard
