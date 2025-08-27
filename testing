@@ -1,186 +1,92 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  CircularProgress,
-} from "@mui/material";
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from "recharts";
+import { Box, Typography, Select, MenuItem } from "@mui/material";
 import axios from "axios";
+import api from "../../Api/api";
 
-interface Message {
-  sender: string;
-  text: string;
-  timestamp: string;
-}
+const RiskTypesOverTimeChart: React.FC = () => {
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [period, setPeriod] = useState<"weekly" | "monthly">("weekly");
 
-interface Chat {
-  id: string;
-  riskId: string;
-  user: string;
-  status: "Completed" | "In Progress";
-  lastUpdated: string;
-  messages: Message[];
-}
-
-const statusColors: Record<string, "success" | "warning"> = {
-  Completed: "success",
-  "In Progress": "warning",
-};
-
-export default function ChatHistory() {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
-
+  // ✅ Fetch API once and store both weekly + monthly
   useEffect(() => {
-    axios
-      .get("data/dummyChat.json") // <-- your backend or dummy.json
-      .then((res) => setChats(res.data))
-      .catch((err) => console.error("Error fetching chats", err))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/risks.json"); // your API endpoint
+        setWeeklyData(res.data.weekly);
+        setMonthlyData(res.data.monthly);
+      } catch (err) {
+        console.error("Error fetching risk trends:", err);
+      }
+    };
+    fetchData();
   }, []);
+  console.log("Weekly Data:", weeklyData);
+  console.log("Monthly Data:", monthlyData);
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // ✅ Select chart data based on dropdown
+  const chartData = period === "weekly" ? weeklyData : monthlyData;
 
   return (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Chat History
-      </Typography>
+    <Box sx={{ width: "100%", height: 400, p: 2 }}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6">Risk Types Trends Over Time</Typography>
+        <Select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as "weekly" | "monthly")}
+          size="small"
+        >
+          <MenuItem value="weekly">Weekly</MenuItem>
+          <MenuItem value="monthly">Monthly</MenuItem>
+        </Select>
+      </Box>
 
-      {chats.map((chat) => (
-        <Card key={chat.id} sx={{ mb: 2, p: 1 }}>
-          <CardContent>
-            {/* Header */}
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Box>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {chat.user}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Risk ID: {chat.riskId}
-                </Typography>
-              </Box>
-              <Box textAlign="right">
-                <Chip
-                  label={chat.status}
-                  color={statusColors[chat.status]}
-                  size="small"
-                />
-                <Typography variant="caption" display="block">
-                  Last: {new Date(chat.lastUpdated).toLocaleString()}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Divider sx={{ my: 1 }} />
-
-            {/* Messages */}
-            {chat.messages.map((msg, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  backgroundColor:
-                    msg.sender === chat.user ? "#f9f9f9" : "#e3f2fd",
-                  p: 1,
-                  mb: 1,
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  {msg.sender}
-                </Typography>
-                <Typography variant="body2">{msg.text}</Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {new Date(msg.timestamp).toLocaleString()}
-                </Typography>
-              </Box>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="period" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" dataKey="outOfStock" stroke="#d32f2f" name="Out of Stock" />
+          <Line type="monotone" dataKey="belowRS" stroke="#f57c00" name="Below RS" />
+          <Line type="monotone" dataKey="aboveMax" stroke="#1976d2" name="Above Max" />
+        </LineChart>
+      </ResponsiveContainer>
     </Box>
   );
-}
-
-
-
-
-
-
-
-
-
-
-import React from "react";
-import {
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineContent,
-  TimelineDot,
-} from "@mui/lab";
-import { Card, CardContent, Typography } from "@mui/material";
-
-interface Activity {
-  id: number;
-  message?: string;
-  timestamp?: string;
-  status?: string;
-}
-
-interface Props {
-  activities: Activity[];
-}
-
-const RiskActivitySummary: React.FC<Props> = ({ activities }) => {
-  return (
-    <Card className="shadow-lg rounded-2xl">
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Activity Timeline – Risk Summary
-        </Typography>
-
-        <Timeline>
-          {activities.map((activity, idx) => (
-            <TimelineItem key={activity.id}>
-              <TimelineSeparator>
-                <TimelineDot
-                  color={
-                    activity.status === "completed"
-                      ? "success"
-                      : activity.status === "in-progress"
-                      ? "warning"
-                      : "primary"
-                  }
-                />
-                {idx < activities.length - 1 && <TimelineConnector />}
-              </TimelineSeparator>
-              <TimelineContent>
-                <Typography variant="body1">{activity.message}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {activity.timestamp}
-                </Typography>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
-        </Timeline>
-      </CardContent>
-    </Card>
-  );
 };
 
-export default RiskActivitySummary;
+export default RiskTypesOverTimeChart;
+
+
+
+{
+  "weekly": [
+    { "period": "W45", "outOfStock": 45, "belowRS": 32, "aboveMax": 18 },
+    { "period": "W46", "outOfStock": 52, "belowRS": 35, "aboveMax": 20 },
+    { "period": "W47", "outOfStock": 40, "belowRS": 38, "aboveMax": 22 },
+    { "period": "W48", "outOfStock": 44, "belowRS": 36, "aboveMax": 28 },
+    { "period": "W49", "outOfStock": 50, "belowRS": 39, "aboveMax": 24 },
+    { "period": "W50", "outOfStock": 42, "belowRS": 41, "aboveMax": 30 },
+    { "period": "W51", "outOfStock": 61, "belowRS": 46, "aboveMax": 33 },
+    { "period": "W52", "outOfStock": 59, "belowRS": 44, "aboveMax": 29 },
+    { "period": "W01", "outOfStock": 55, "belowRS": 43, "aboveMax": 31 },
+    { "period": "W02", "outOfStock": 49, "belowRS": 42, "aboveMax": 28 },
+    { "period": "W03", "outOfStock": 47, "belowRS": 40, "aboveMax": 32 },
+    { "period": "W04", "outOfStock": 54, "belowRS": 45, "aboveMax": 35 }
+  ],
+  "monthly": [
+    { "period": "Jan", "outOfStock": 180, "belowRS": 135, "aboveMax": 92 },
+    { "period": "Feb", "outOfStock": 165, "belowRS": 120, "aboveMax": 88 },
+    { "period": "Mar", "outOfStock": 175, "belowRS": 140, "aboveMax": 95 },
+    { "period": "Apr", "outOfStock": 160, "belowRS": 125, "aboveMax": 85 },
+    { "period": "May", "outOfStock": 190, "belowRS": 150, "aboveMax": 100 },
+    { "period": "Jun", "outOfStock": 200, "belowRS": 155, "aboveMax": 110 }
+  ]
+}
